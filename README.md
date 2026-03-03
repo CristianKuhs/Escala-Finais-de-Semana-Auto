@@ -11,6 +11,7 @@
         :root {
             --bg: #0f172a;
             --card-bg: #1e293b;
+            --header-bg: #0f4c75;
             --accent: #3b82f6;
             --success: #10b981;
             --error: #ef4444;
@@ -110,54 +111,87 @@
         .schedule {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
             padding: 1rem;
         }
         .week-card {
             background: var(--card-bg);
-            padding: 1rem;
-            border-radius: 0.5rem;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
             backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .week-card h3 {
-            margin-top: 0;
-        }
-        .day-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .day-group h4 {
-            margin: 0.5rem 0 0.25rem 0;
+            margin: 0 0 1.5rem 0;
             color: var(--accent);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .days-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .day-schedule {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .day-header {
+            background: var(--header-bg);
+            padding: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
             font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--accent);
         }
-        .shift-row {
+        .shifts-table {
             display: flex;
-            justify-content: space-between;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            transition: background 0.2s;
+            flex-direction: column;
+        }
+        .shift-cell {
+            display: grid;
+            grid-template-columns: 0.8fr 1fr 1.2fr;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            align-items: center;
             cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
         }
-        .shift-row:hover {
-            background: var(--glass);
+        .shift-cell:hover {
+            background: rgba(59, 130, 246, 0.1);
         }
-        .shift-info {
-            flex: 1;
+        .shift-cell:last-child {
+            border-bottom: none;
         }
-        .agent-name {
-            flex: 1;
+        .shift-label {
             font-weight: 600;
-            min-width: 150px;
+            color: var(--accent);
+            font-size: 0.85rem;
         }
-        .agent-observation {
-            margin-top: 0.25rem;
+        .shift-time {
+            font-size: 0.85rem;
+            color: rgba(229, 231, 235, 0.7);
+        }
+        .agent-assignment {
+            font-weight: 600;
             color: var(--text);
+            min-height: 1.2rem;
+        }
+        .agent-assignment.empty {
+            color: var(--error);
+            font-weight: bold;
+            opacity: 0.7;
+        }
+        .agent-info {
             font-size: 0.75rem;
-            opacity: 0.8;
+            color: rgba(229, 231, 235, 0.6);
+            margin-top: 0.2rem;
         }
         .conflict {
             color: var(--error);
@@ -190,6 +224,7 @@
             text-align: center;
             position: relative;
             animation: fadeIn 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
         .modal-close {
             position: absolute;
@@ -198,20 +233,16 @@
             cursor: pointer;
             font-size: 1.2rem;
         }
-        @media (min-width: 768px) {
-            .schedule {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
-            .week-card {
-                flex: 1 1 45%;
+        @media (max-width: 900px) {
+            .days-container {
+                grid-template-columns: 1fr;
             }
         }
-        .week-card, .agent-card, .shift-row {
+        .week-card, .agent-card, .shift-cell {
             transition: background 0.3s, transform 0.2s;
         }
-        .week-card:hover, .agent-card:hover, .shift-row:hover {
-            transform: translateY(-2px);
+        .week-card:hover, .agent-card:hover, .shift-cell:hover {
+            transform: translateY(-1px);
         }
         /* modal animation */
         @keyframes fadeIn {
@@ -223,6 +254,20 @@
             color: var(--text);
             font-size: 0.9rem;
             padding: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            margin: 0 1rem 1rem 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .table-header-row {
+            display: grid;
+            grid-template-columns: 0.8fr 1fr 1.2fr;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            font-weight: 700;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--accent);
         }
     </style>
 </head>
@@ -255,6 +300,7 @@
           script.js - lógica do sistema de geração de escala
           - cálculos de horários
           - geração aleatória respeitando 11h de descanso
+          - NOVA REGRA: quem trabalha sábado NÃO pode trabalhar domingo
           - painel de controle de agentes com status
           - persistência via localStorage
           - edição manual simples
@@ -271,10 +317,18 @@
             return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
         }
         function diffMinutes(start, end) {
-            // assume start/end em minutos do mesmo dia ou end no dia seguinte
             let d = end - start;
             if (d < 0) d += 24 * 60;
             return d;
+        }
+        // função para shuffle - melhor aleatoriedade
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
         }
         // constantes fornecidas
         const WEEKEND_SHIFTS = {
@@ -427,36 +481,41 @@
                 alert('Agente não está marcado como disponível. Ajuste o status primeiro.');
                 return;
             }
-            // validação de descanso
+            // validação de descanso e regra de sábado/domingo
             if (choice !== '---') {
                 const m = scheduleData[week][day][idx];
                 const entry = timeToMinutes(m.entry);
-                // se for sábado, verificar descanso de sexta
+                // NOVA REGRA: se tá em domingo, não pode ter trabalhado sábado
+                if (day === 'sunday') {
+                    const satWorked = scheduleData[week].saturday.find(s=>s.agent===choice);
+                    if (satWorked) {
+                        showModal('❌ Conflito: este agente trabalha SÁBADO desta semana. Não pode trabalhar DOMINGO também!');
+                        return;
+                    }
+                }
+                // NOVA REGRA: se tá em sábado, não pode trabalhar domingo
+                if (day === 'saturday') {
+                    const sunWorked = scheduleData[week].sunday.find(s=>s.agent===choice);
+                    if (sunWorked) {
+                        showModal('❌ Conflito: este agente trabalha DOMINGO desta semana. Não pode trabalhar SÁBADO também!');
+                        return;
+                    }
+                }
+                // verificar descanso de sexta para sábado
                 if (day === 'saturday') {
                     const ag = AGENTS.find(a=>a.name===choice);
                     const diff = diffMinutes(timeToMinutes(ag.fridayExit), entry);
                     if (diff < 11*60) {
-                        showModal('Conflito: menos de 11h após saída de sexta.');
+                        showModal('⚠️ Conflito: menos de 11h de descanso após saída de sexta (necesário ' + Math.ceil((11*60 - diff)/60) + 'h mais).');
                         return;
                     }
                 }
-                // se for domingo, verificar descanso de sábado
+                // verificar descanso de sexta para domingo
                 if (day === 'sunday') {
-                    // encontre a saída do mesmo agente no sábado
-                    const sat = scheduleData[week].saturday.find(s=>s.agent===choice);
-                    if (sat) {
-                        const lastExit = timeToMinutes(sat.exit);
-                        const diff = (entry + 24*60) - lastExit;
-                        if (diff < 11*60) {
-                            showModal('Conflito: menos de 11h entre sábado e domingo.');
-                            return;
-                        }
-                    }
-                    // também verificar sexta caso tenha não trabalhado sábado
                     const ag = AGENTS.find(a=>a.name===choice);
                     const difff = diffMinutes(timeToMinutes(ag.fridayExit), entry);
                     if (difff < 11*60) {
-                        showModal('Conflito: menos de 11h após saída de sexta.');
+                        showModal('⚠️ Conflito: menos de 11h de descanso após saída de sexta.');
                         return;
                     }
                 }
@@ -466,66 +525,72 @@
             renderSchedule();
         }
         function generateSchedule() {
-            // inicializa saídas de sexta
             const fridayExitMinutes = {};
             AGENTS.forEach(a => {
                 fridayExitMinutes[a.name] = timeToMinutes(a.fridayExit);
             });
             const result = {};
             let modalShown = false;
-            const conflicts = [];
             // para cada semana
             Object.keys(MONTH_WEEKENDS_CONFIG).forEach(weekKey => {
                 result[weekKey] = { saturday: [], sunday: [] };
-                let lastExitSat = {}; // nome -> minutos
-                // saturday
-                WEEKEND_SHIFTS.saturday.forEach(shift => {
+                const workingSaturday = new Set(); // quem trabalha sábado
+                // SATURDAY - shuffle para melhor aleatoriedade
+                const satShifts = shuffle(WEEKEND_SHIFTS.saturday);
+                satShifts.forEach(shift => {
                     const entryMin = timeToMinutes(shift.entry1);
-                    // candidatos
                     let candidates = AGENTS.filter(a => {
                         if (agentStatus[a.name] !== 'Disponível') return false;
-                        // não ter trabalhado outro turno no mesmo sábado
                         if (result[weekKey].saturday.some(r=>r.agent===a.name)) return false;
-                        // descanso de sexta
                         const diff = diffMinutes(fridayExitMinutes[a.name], entryMin);
                         return diff >= 11*60;
                     }).map(a=>a.name);
+                    // shuffle para maior aleatoriedade na seleção
+                    candidates = shuffle(candidates);
                     if (candidates.length === 0) {
                         if (!modalShown) {
-                            showModal(`Não há agentes disponíveis para ${weekKey} sábado ${shift.shift} devido às regras de descanso.`);
+                            showModal(`⚠️ Sem agentes disponíveis para ${weekKey} sábado ${shift.shift}.`);
                             modalShown = true;
                         }
                     }
-                    // seleção aleatória
-                    const chosen = candidates[Math.floor(Math.random()*candidates.length)];
-                    result[weekKey].saturday.push({ shift: shift.shift, agent: chosen || '---', entry: shift.entry1, exit: shift.exit2 });
-                    if (chosen) lastExitSat[chosen] = timeToMinutes(shift.exit2);
+                    const chosen = candidates[0];
+                    result[weekKey].saturday.push({ 
+                        shift: shift.shift, 
+                        agent: chosen || '', 
+                        entry: shift.entry1, 
+                        exit: shift.exit2 
+                    });
+                    if (chosen) {
+                        workingSaturday.add(chosen);
+                    }
                 });
-                // sunday
-                WEEKEND_SHIFTS.sunday.forEach(shift => {
+                // SUNDAY - NOVA REGRA: não pode quem trabalhou sábado
+                const sunShifts = shuffle(WEEKEND_SHIFTS.sunday);
+                sunShifts.forEach(shift => {
                     const entryMin = timeToMinutes(shift.entry1);
                     let candidates = AGENTS.filter(a => {
                         if (agentStatus[a.name] !== 'Disponível') return false;
-                        // não ter trabalhado outro turno no mesmo domingo
+                        // REGRA PRINCIPAL: não pode se trabalhou sábado
+                        if (workingSaturday.has(a.name)) return false;
                         if (result[weekKey].sunday.some(r=>r.agent===a.name)) return false;
-                        // descanso de sábado
-                        const lastExit = lastExitSat[a.name];
-                        if (lastExit === undefined) {
-                            // não trabalhou no sábado, então só cheque descanso friday->sunday?
-                            const diff = diffMinutes(fridayExitMinutes[a.name], entryMin);
-                            return diff >= 11*60;
-                        }
-                        const diff = (entryMin + 24*60) - lastExit;
+                        const diff = diffMinutes(fridayExitMinutes[a.name], entryMin);
                         return diff >= 11*60;
                     }).map(a=>a.name);
+                    // shuffle para maior aleatoriedade
+                    candidates = shuffle(candidates);
                     if (candidates.length === 0) {
                         if (!modalShown) {
-                            showModal(`Não há agentes disponíveis para ${weekKey} domingo ${shift.shift} devido às regras de descanso.`);
+                            showModal(`⚠️ Sem agentes disponíveis para ${weekKey} domingo ${shift.shift}.`);
                             modalShown = true;
                         }
                     }
-                    const chosen = candidates[Math.floor(Math.random()*candidates.length)];
-                    result[weekKey].sunday.push({ shift: shift.shift, agent: chosen || '---', entry: shift.entry1, exit: shift.exit2 });
+                    const chosen = candidates[0];
+                    result[weekKey].sunday.push({ 
+                        shift: shift.shift, 
+                        agent: chosen || '', 
+                        entry: shift.entry1, 
+                        exit: shift.exit2 
+                    });
                 });
             });
             scheduleData = result;
@@ -543,47 +608,59 @@
                 const title = document.createElement('h3');
                 title.textContent = `${weekCfg.label} - ${weekCfg.weekend}`;
                 weekDiv.appendChild(title);
+                const daysContainer = document.createElement('div');
+                daysContainer.className = 'days-container';
                 ['saturday','sunday'].forEach(day => {
-                    const dayGroup = document.createElement('div');
-                    dayGroup.className = 'day-group';
-                    const dayTitle = document.createElement('h4');
-                    dayTitle.textContent = day.charAt(0).toUpperCase() + day.slice(1);
-                    dayGroup.appendChild(dayTitle);
+                    const daySchedule = document.createElement('div');
+                    daySchedule.className = 'day-schedule';
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    dayHeader.textContent = day === 'saturday' ? '📅 SÁBADO' : '📅 DOMINGO';
+                    daySchedule.appendChild(dayHeader);
+                    const shiftsTable = document.createElement('div');
+                    shiftsTable.className = 'shifts-table';
+                    // header das colunas
+                    const headerRow = document.createElement('div');
+                    headerRow.className = 'table-header-row';
+                    headerRow.innerHTML = '<div>Turno</div><div>Horário</div><div>Agente</div>';
+                    shiftsTable.appendChild(headerRow);
                     (scheduleData[weekKey][day]||[]).forEach((row, idx)=>{
-                        const rowEl = document.createElement('div');
-                        rowEl.className = 'shift-row';
-                        rowEl.dataset.week = weekKey;
-                        rowEl.dataset.day = day;
-                        rowEl.dataset.shiftIndex = idx;
-                        const info = document.createElement('div');
-                        info.className = 'shift-info';
-                        info.textContent = `${row.shift}: ${row.entry}–${row.exit}`;
-                        const agentEl = document.createElement('div');
-                        agentEl.className = 'agent-name';
-                        agentEl.textContent = row.agent || '---';
+                        const cell = document.createElement('div');
+                        cell.className = 'shift-cell';
+                        cell.dataset.week = weekKey;
+                        cell.dataset.day = day;
+                        cell.dataset.shiftIndex = idx;
+                        const shiftLabel = document.createElement('div');
+                        shiftLabel.className = 'shift-label';
+                        shiftLabel.textContent = row.shift;
+                        const shiftTime = document.createElement('div');
+                        shiftTime.className = 'shift-time';
+                        shiftTime.textContent = `${row.entry}–${row.exit}`;
+                        const agentAssignment = document.createElement('div');
                         if (!row.agent) {
-                            rowEl.classList.add('conflict');
-                        }
-                        rowEl.appendChild(info);
-                        rowEl.appendChild(agentEl);
-                        // observação automática com horário base do agente
-                        if (row.agent) {
+                            agentAssignment.className = 'agent-assignment empty conflict';
+                            agentAssignment.innerHTML = '<div>⚠️ SEM AGENTE</div>';
+                        } else {
+                            agentAssignment.className = 'agent-assignment';
                             const ag = AGENTS.find(a=>a.name===row.agent);
+                            agentAssignment.innerHTML = `<div>✓ ${row.agent}</div>`;
                             if (ag) {
-                                const obs = document.createElement('div');
-                                obs.className = 'agent-observation';
-                                obs.textContent = `${ag.fridayStart} até ${ag.fridayExit} (${ag.fridayStart} / ${ag.fridayExit})`;
-                                rowEl.appendChild(obs);
+                                const info = document.createElement('div');
+                                info.className = 'agent-info';
+                                info.textContent = `Sex: ${ag.fridayStart}–${ag.fridayExit}`;
+                                agentAssignment.appendChild(info);
                             }
                         }
-                        // click to modify manually
-                        rowEl.addEventListener('click', () => {
-                            openManualEdit(rowEl);
-                        });
-                        dayGroup.appendChild(rowEl);
+                        cell.appendChild(shiftLabel);
+                        cell.appendChild(shiftTime);
+                        cell.appendChild(agentAssignment);
+                        cell.addEventListener('click', () => openManualEdit(cell));
+                        shiftsTable.appendChild(cell);
                     });
-                    weekDiv.appendChild(dayGroup);
+                    daySchedule.appendChild(shiftsTable);
+                    daysContainer.appendChild(daySchedule);
                 });
+                weekDiv.appendChild(daysContainer);
                 container.appendChild(weekDiv);
             });
             applyFilter();
@@ -591,7 +668,7 @@
         }
         function applyFilter() {
             const term = document.getElementById('filterInput').value.toLowerCase();
-            document.querySelectorAll('.shift-row').forEach(row => {
+            document.querySelectorAll('.shift-cell').forEach(row => {
                 const text = row.textContent.toLowerCase();
                 if (term && !text.includes(term)) row.classList.add('filter-hidden');
                 else row.classList.remove('filter-hidden');
@@ -601,9 +678,9 @@
             const div = document.getElementById('generationInfo');
             if (lastGenMonth) {
                 const d = new Date(lastGenMonth);
-                div.textContent = `Última geração: ${d.toLocaleString()}`;
+                div.textContent = `✓ Gerada em ${d.toLocaleString()} | 📌 Regras: Folga alternada (Sáb/Dom) + 11h min descanso`;
             } else {
-                div.textContent = 'Nenhuma escala gerada ainda.';
+                div.textContent = 'Clique em "Gerar Escala" para começar';
             }
         }
         // listeners
