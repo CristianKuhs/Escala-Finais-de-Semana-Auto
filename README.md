@@ -1,0 +1,1 @@
+# Escala-Finais-de-Semana-Auto
