@@ -334,17 +334,15 @@
         const WEEKEND_SHIFTS = {
           saturday: [
             { shift: "Turno 1", entry1: "07:30", exit1: "11:30", entry2: "12:30", exit2: "15:50" },
-            { shift: "Turno 2", entry1: "08:00", exit1: "12:30", entry2: "13:30", exit2: "16:20" },
-            { shift: "Turno 3", entry1: "09:00", exit1: "13:30", entry2: "14:30", exit2: "17:20" },
-            { shift: "Turno 4", entry1: "10:00", exit1: "14:00", entry2: "15:00", exit2: "18:20" },
-            { shift: "Turno 5", entry1: "12:00", exit1: "15:00", entry2: "16:00", exit2: "20:20" },
-            { shift: "Turno 6", entry1: "12:00", exit1: "16:00", entry2: "17:00", exit2: "21:20" },
+            { shift: "Turno 2", entry1: "08:00", exit1: "12:00", entry2: "13:00", exit2: "16:20" },
+            { shift: "Turno 3", entry1: "10:00", exit1: "13:30", entry2: "14:30", exit2: "18:20" },
+            { shift: "Turno 4", entry1: "12:00", exit1: "15:00", entry2: "16:00", exit2: "20:20" },
+            { shift: "Turno 5", entry1: "13:00", exit1: "16:00", entry2: "17:00", exit2: "21:20" },
           ],
           sunday: [
             { shift: "Turno 1", entry1: "08:00", exit1: "12:00", entry2: "13:00", exit2: "16:20" },
-            { shift: "Turno 2", entry1: "08:00", exit1: "12:30", entry2: "13:30", exit2: "16:20" },
+            { shift: "Turno 2", entry1: 10:00", exit1: "13:00", entry2: "14:00", exit2: "18:20" },
             { shift: "Turno 3", entry1: "12:00", exit1: "14:00", entry2: "15:00", exit2: "20:20" },
-            { shift: "Turno 4", entry1: "12:00", exit1: "15:00", entry2: "16:00", exit2: "20:20" }
           ]
         };
         const MONTH_WEEKENDS_CONFIG = {
@@ -356,12 +354,12 @@
         // agentes e horários base de sexta-feira (entrada e saída)
         const AGENTS = [
           { name: 'Charlote', fridayStart: '13:00', fridayExit: '21:20' },
-          { name: 'Eduardo', fridayStart: '13:40', fridayExit: '22:00' },
+          { name: 'Eduardo', fridayStart: '08:00', fridayExit: '16:20' },
           { name: 'Emilly', fridayStart: '13:40', fridayExit: '22:00' },
           { name: 'Fernando', fridayStart: '13:00', fridayExit: '21:20' },
-          { name: 'João', fridayStart: '13:00', fridayExit: '21:20' },
-          { name: 'João Lucas', fridayStart: '13:00', fridayExit: '21:20' },
-          { name: 'Kaua', fridayStart: '13:40', fridayExit: '22:00' },
+          { name: 'João', fridayStart: '10:00', fridayExit: '18:20' },
+          { name: 'João Lucas', fridayStart: '13:40', fridayExit: '22:00' },
+          { name: 'Kaua', fridayStart: '11:00', fridayExit: '19:20' },
           { name: 'Pamela', fridayStart: '07:30', fridayExit: '15:50' },
           { name: 'Richard', fridayStart: '08:00', fridayExit: '16:20' }
         ];
